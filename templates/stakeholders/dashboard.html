@@ -749,7 +749,6 @@ function initializeCategoryChart() {
     if (!categoryData || categoryData.length === 0) {
         // Show empty state in chart container
         ctx.parentElement.innerHTML = `
-            <h6><i class="bi bi-pie-chart"></i> Stakeholder Categories</h6>
             <div class="text-center py-4">
                 <i class="bi bi-pie-chart text-muted" style="font-size: 3rem;"></i>
                 <p class="text-muted mt-2">No category data available</p>
@@ -785,7 +784,6 @@ function initializeCategoryChart() {
     } catch (e) {
         console.error('Error creating category chart:', e);
         ctx.parentElement.innerHTML = `
-            <h6><i class="bi bi-pie-chart"></i> Stakeholder Categories</h6>
             <div class="text-center py-4">
                 <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
                 <p class="text-muted mt-2">Error loading chart</p>
