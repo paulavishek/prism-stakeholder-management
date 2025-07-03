@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Engagement Detail - Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-calendar-event"></i> {{ engagement.title }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'engagement_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>        <a href="{% url 'engagement_edit' engagement.pk %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Engagement Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Stakeholder:</strong><br>
+                        <a href="{% url 'stakeholder_detail' engagement.stakeholder.pk %}">
+                            {{ engagement.stakeholder.name }}
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Type:</strong><br>
+                        <span class="badge bg-info">{{ engagement.get_type_display }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">                    <div class="col-md-6">
+                        <strong>Status:</strong><br>
+                        {% if engagement.status == 'planned' %}
+                            <span class="badge bg-primary">{{ engagement.get_status_display }}</span>
+                        {% elif engagement.status == 'completed' %}
+                            <span class="badge bg-success">{{ engagement.get_status_display }}</span>
+                        {% elif engagement.status == 'cancelled' %}
+                            <span class="badge bg-danger">{{ engagement.get_status_display }}</span>
+                        {% elif engagement.status == 'postponed' %}
+                            <span class="badge bg-warning">{{ engagement.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ engagement.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Scheduled:</strong><br>
+                        {{ engagement.scheduled_date|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+                
+                {% if engagement.description %}
+                    <div class="mb-3">
+                        <strong>Description:</strong><br>
+                        {{ engagement.description|linebreaks }}
+                    </div>
+                {% endif %}
+                
+                {% if engagement.objectives %}
+                    <div class="mb-3">
+                        <strong>Objectives:</strong><br>
+                        {{ engagement.objectives|linebreaks }}
+                    </div>
+                {% endif %}            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

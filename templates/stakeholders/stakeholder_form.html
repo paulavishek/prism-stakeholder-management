@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person-plus"></i> {{ title }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'stakeholder_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Stakeholder Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted border-bottom pb-2">Basic Information</h6>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                Name <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+                            {{ form.title }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.organization.id_for_label }}" class="form-label">Organization</label>
+                            {{ form.organization }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.department.id_for_label }}" class="form-label">Department</label>
+                            {{ form.department }}
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted border-bottom pb-2">Contact Information</h6>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Phone</label>
+                            {{ form.phone }}
+                        </div>
+                    </div>
+                    
+                    <!-- Stakeholder Analysis -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted border-bottom pb-2">Stakeholder Analysis</h6>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.influence.id_for_label }}" class="form-label">Influence Level</label>
+                            {{ form.influence }}
+                            <small class="form-text text-muted">How much power/authority does this stakeholder have?</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.interest.id_for_label }}" class="form-label">Interest Level</label>
+                            {{ form.interest }}
+                            <small class="form-text text-muted">How much interest do they have in the project?</small>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                            {{ form.category }}
+                            <small class="form-text text-muted">Type of stakeholder relationship</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Details -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted border-bottom pb-2">Additional Details</h6>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                            {{ form.description }}
+                            <small class="form-text text-muted">Brief description of the stakeholder and their role</small>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                            {{ form.notes }}
+                            <small class="form-text text-muted">Any additional notes or observations</small>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Enhancement Options -->
+                    {% if not stakeholder %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0"><i class="bi bi-robot"></i> AI Enhancement Options</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="generate_ai_insights" id="generateAI">
+                                            <label class="form-check-label" for="generateAI">
+                                                <strong>Generate AI Insights</strong>
+                                                <small class="text-muted d-block">
+                                                    Let AI analyze the stakeholder information and provide insights about engagement strategies, 
+                                                    potential concerns, and communication recommendations.
+                                                </small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="bi bi-robot"></i> AI Enhancement Options</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="regenerate_ai_insights" id="regenerateAI">
+                                            <label class="form-check-label" for="regenerateAI">
+                                                <strong>Regenerate AI Insights</strong>
+                                                <small class="text-muted d-block">
+                                                    Update AI analysis based on the current stakeholder information.
+                                                </small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Form Actions -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-lg"></i> 
+                                    {% if stakeholder %}Update{% else %}Create{% endif %} Stakeholder
+                                </button>
+                                <a href="{% url 'stakeholder_list' %}" class="btn btn-secondary">
+                                    <i class="bi bi-x-lg"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar with Tips -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Tips for Stakeholder Analysis</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-primary">Influence Level</h6>
+                    <ul class="small">
+                        <li><strong>High:</strong> Decision makers, executives, project sponsors</li>
+                        <li><strong>Medium:</strong> Team leads, department heads</li>
+                        <li><strong>Low:</strong> End users, support staff</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-success">Interest Level</h6>
+                    <ul class="small">
+                        <li><strong>High:</strong> Directly affected by outcomes</li>
+                        <li><strong>Medium:</strong> Indirectly affected</li>
+                        <li><strong>Low:</strong> Minimal impact from project</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info small">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Pro Tip:</strong> Use AI insights to get personalized engagement strategies based on stakeholder characteristics.
+                </div>
+            </div>
+        </div>
+        
+        {% if stakeholder and stakeholder.ai_generated_insights %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-robot"></i> AI Insights</h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        {{ stakeholder.ai_generated_insights|linebreaks }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

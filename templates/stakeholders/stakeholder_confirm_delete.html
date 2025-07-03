@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete {{ stakeholder.name }} - Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 text-danger">
+        <i class="bi bi-exclamation-triangle"></i> Delete Stakeholder
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'stakeholder_detail' stakeholder.pk %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Profile
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action cannot be undone!
+                </div>
+                
+                <p class="mb-3">
+                    Are you sure you want to delete the stakeholder <strong>{{ stakeholder.name }}</strong>?
+                </p>
+                
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6>Stakeholder Information:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Name:</strong> {{ stakeholder.name }}</li>
+                            <li><strong>Organization:</strong> {{ stakeholder.organization|default:"Not specified" }}</li>
+                            <li><strong>Title:</strong> {{ stakeholder.title|default:"Not specified" }}</li>
+                            <li><strong>Category:</strong> {{ stakeholder.get_category_display }}</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Note:</strong> Deleting this stakeholder will also remove all associated engagements and relationships.
+                </div>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'stakeholder_detail' stakeholder.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-x-lg"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Delete Stakeholder
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

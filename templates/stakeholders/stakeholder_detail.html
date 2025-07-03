@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ stakeholder.name }} - Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person"></i> {{ stakeholder.name }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'stakeholder_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+        </div>        <div class="btn-group me-2">
+            <a href="{% url 'stakeholder_edit' stakeholder.pk %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <a href="{% url 'engagement_create' %}?stakeholder={{ stakeholder.pk }}" class="btn btn-sm btn-success">
+                <i class="bi bi-calendar-plus"></i> Schedule Meeting
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Information -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Stakeholder Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Title:</strong> {{ stakeholder.title|default:"Not specified" }}</p>
+                        <p><strong>Organization:</strong> {{ stakeholder.organization|default:"Not specified" }}</p>
+                        <p><strong>Department:</strong> {{ stakeholder.department|default:"Not specified" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Email:</strong> 
+                            {% if stakeholder.email %}
+                                <a href="mailto:{{ stakeholder.email }}">{{ stakeholder.email }}</a>
+                            {% else %}
+                                Not provided
+                            {% endif %}
+                        </p>
+                        <p><strong>Phone:</strong> {{ stakeholder.phone|default:"Not provided" }}</p>
+                        <p><strong>Category:</strong> 
+                            <span class="badge bg-secondary">{{ stakeholder.get_category_display }}</span>
+                        </p>
+                    </div>
+                </div>
+                
+                {% if stakeholder.description %}
+                    <div class="mt-3">
+                        <strong>Description:</strong>
+                        <p class="mt-2">{{ stakeholder.description|linebreaks }}</p>
+                    </div>
+                {% endif %}
+                
+                {% if stakeholder.notes %}
+                    <div class="mt-3">
+                        <strong>Notes:</strong>
+                        <p class="mt-2">{{ stakeholder.notes|linebreaks }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Engagements -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Engagements</h5>
+                <a href="{% url 'engagement_create' %}?stakeholder={{ stakeholder.pk }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus"></i> Add New
+                </a>
+            </div>
+            <div class="card-body">
+                {% if engagements %}
+                    <div class="list-group list-group-flush">
+                        {% for engagement in engagements %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ engagement.title }}</strong>
+                                    <small class="text-muted d-block">
+                                        {{ engagement.get_type_display }} • {{ engagement.scheduled_date|date:"M d, Y H:i" }}
+                                    </small>
+                                </div>                                <div>
+                                    {% if engagement.status == 'planned' %}
+                                        <span class="badge bg-primary">{{ engagement.get_status_display }}</span>
+                                    {% elif engagement.status == 'completed' %}
+                                        <span class="badge bg-success">{{ engagement.get_status_display }}</span>
+                                    {% elif engagement.status == 'cancelled' %}
+                                        <span class="badge bg-danger">{{ engagement.get_status_display }}</span>
+                                    {% elif engagement.status == 'postponed' %}
+                                        <span class="badge bg-warning">{{ engagement.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ engagement.get_status_display }}</span>
+                                    {% endif %}
+                                    <a href="{% url 'engagement_detail' engagement.pk %}" class="btn btn-sm btn-outline-primary ms-2">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No engagements recorded yet.</p>
+                        <a href="{% url 'engagement_create' %}?stakeholder={{ stakeholder.pk }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-calendar-plus"></i> Schedule First Meeting
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Stakeholder Analysis -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">Stakeholder Analysis</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="h4 text-primary">{{ stakeholder.influence_score }}/4</div>
+                        <small class="text-muted">Influence</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 text-success">{{ stakeholder.interest_score }}/4</div>
+                        <small class="text-muted">Interest</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h4 text-warning">{{ stakeholder.priority_score }}/16</div>
+                        <small class="text-muted">Priority</small>
+                    </div>
+                </div>                <div class="mt-3">
+                    <div class="mb-2">
+                        <small class="text-muted">Influence Level:</small><br>
+                        {% if stakeholder.influence == 'low' %}
+                            <span class="badge bg-success">{{ stakeholder.get_influence_display }}</span>
+                        {% elif stakeholder.influence == 'medium' %}
+                            <span class="badge bg-warning">{{ stakeholder.get_influence_display }}</span>
+                        {% elif stakeholder.influence == 'high' %}
+                            <span class="badge bg-danger">{{ stakeholder.get_influence_display }}</span>
+                        {% elif stakeholder.influence == 'very_high' %}
+                            <span class="badge bg-dark">{{ stakeholder.get_influence_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ stakeholder.get_influence_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Interest Level:</small><br>
+                        {% if stakeholder.interest == 'low' %}
+                            <span class="badge bg-success">{{ stakeholder.get_interest_display }}</span>
+                        {% elif stakeholder.interest == 'medium' %}
+                            <span class="badge bg-warning">{{ stakeholder.get_interest_display }}</span>
+                        {% elif stakeholder.interest == 'high' %}
+                            <span class="badge bg-danger">{{ stakeholder.get_interest_display }}</span>
+                        {% elif stakeholder.interest == 'very_high' %}
+                            <span class="badge bg-dark">{{ stakeholder.get_interest_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ stakeholder.get_interest_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Insights -->
+        {% if stakeholder.ai_generated_insights %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-robot"></i> AI Insights</h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        {{ stakeholder.ai_generated_insights|linebreaks }}
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="regenerateInsights()">
+                        <i class="bi bi-arrow-clockwise"></i> Regenerate
+                    </button>
+                </div>
+            </div>        {% endif %}
+        
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function regenerateInsights() {
+    // This would trigger AI insights regeneration
+    alert('AI insights regeneration feature coming soon...');
+}
+</script>
+{% endblock %}

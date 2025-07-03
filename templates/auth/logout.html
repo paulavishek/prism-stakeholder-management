@@ -1,0 +1,135 @@
+{% extends 'base_simple.html' %}
+
+{% block title %}Logged Out - Stakeholder Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center p-5">
+                    <!-- Success Icon -->
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <!-- Logout Message -->
+                    <h2 class="mb-3 text-dark">Successfully Logged Out</h2>
+                    <p class="text-muted mb-4">
+                        Thank you for using the Stakeholder Management System. 
+                        Your session has been safely ended.
+                    </p>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'welcome' %}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-house-door me-2"></i>
+                            Return to Home
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Sign In Again
+                        </a>
+                    </div>
+                    
+                    <!-- Security Note -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="bi bi-shield-check me-1"></i>
+                            For your security, make sure to close your browser if you're on a shared computer.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    © 2025 Stakeholder Management System. 
+                    Built with <i class="bi bi-heart-fill text-danger"></i> for better stakeholder relationships.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        min-height: 100vh;
+    }
+    
+    .card {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        border-radius: 24px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+    }
+    
+    .btn {
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        padding: 12px 30px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        border: none;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25);
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
+    }
+    
+    .btn-outline-primary {
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    .btn-outline-primary:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.25);
+    }
+    
+    .bi-check-circle {
+        animation: checkmark 0.6s ease-in-out;
+        color: #10b981 !important;
+    }
+    
+    .bg-light {
+        background-color: #f8fafc !important;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .text-success {
+        color: #10b981 !important;
+    }
+    
+    .text-danger {
+        color: #ef4444 !important;
+    }
+    
+    @keyframes checkmark {
+        0% {
+            transform: scale(0);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.2);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}

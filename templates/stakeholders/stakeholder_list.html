@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Stakeholders - Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-people"></i> Stakeholders</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportStakeholders()">
+                <i class="bi bi-download"></i> Export
+            </button>
+        </div>
+        <a href="{% url 'stakeholder_create' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-person-plus"></i> Add Stakeholder
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Search</label>
+                        <input type="text" class="form-control" name="search" value="{{ search_query }}" 
+                               placeholder="Search by name, organization, title...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Influence</label>
+                        <select class="form-select" name="influence">
+                            <option value="">All Levels</option>
+                            {% for value, label in influence_choices %}
+                                <option value="{{ value }}" {% if value == influence_filter %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category">
+                            <option value="">All Categories</option>
+                            {% for value, label in category_choices %}
+                                <option value="{{ value }}" {% if value == category_filter %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Priority</label>
+                        <select class="form-select" name="priority">
+                            <option value="">All Priorities</option>
+                            <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>
+                                High Priority
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-search"></i> Filter
+                            </button>
+                            {% if search_query or influence_filter or category_filter or priority_filter %}
+                                <a href="{% url 'stakeholder_list' %}" class="btn btn-outline-secondary btn-sm mt-2">
+                                    <i class="bi bi-x-circle"></i> Clear Filters
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Filters Indicator -->
+{% if search_query or influence_filter or category_filter or priority_filter %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <div>
+                <strong>Active Filters:</strong>
+                {% if search_query %}
+                    <span class="badge bg-primary me-1">Search: "{{ search_query }}"</span>
+                {% endif %}
+                {% if influence_filter %}
+                    <span class="badge bg-primary me-1">Influence: {{ influence_filter|title }}</span>
+                {% endif %}
+                {% if category_filter %}
+                    <span class="badge bg-primary me-1">Category: {{ category_filter|title }}</span>
+                {% endif %}
+                {% if priority_filter == 'high' %}
+                    <span class="badge bg-warning me-1">High Priority</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Results Summary -->
+{% if page_obj %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-people-fill text-primary"></i> 
+                Stakeholders
+                <small class="text-muted">({{ page_obj.paginator.count }} total)</small>
+            </h5>
+            {% if page_obj.has_other_pages %}
+                <small class="text-muted">
+                    Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                </small>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Stakeholder Cards -->
+<div class="row">
+    {% for stakeholder in page_obj %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card stakeholder-card h-100 priority-{{ stakeholder.influence }}">
+                <div class="card-body">                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ stakeholder.name }}</h5>
+                        {% if stakeholder.influence == 'low' %}
+                            <span class="badge bg-secondary rounded-pill">{{ stakeholder.get_influence_display }}</span>
+                        {% elif stakeholder.influence == 'medium' %}
+                            <span class="badge bg-info rounded-pill">{{ stakeholder.get_influence_display }}</span>
+                        {% elif stakeholder.influence == 'high' %}
+                            <span class="badge bg-warning rounded-pill">{{ stakeholder.get_influence_display }}</span>
+                        {% elif stakeholder.influence == 'very_high' %}
+                            <span class="badge bg-danger rounded-pill">{{ stakeholder.get_influence_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary rounded-pill">{{ stakeholder.get_influence_display }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <h6 class="card-subtitle mb-2 text-muted">{{ stakeholder.title }}</h6>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-building"></i> {{ stakeholder.organization|default:"No organization" }}
+                    </p>
+                    
+                    {% if stakeholder.email %}
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-envelope"></i> {{ stakeholder.email }}
+                        </p>
+                    {% endif %}
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <small class="text-muted">Influence</small>
+                            <div class="fw-bold">{{ stakeholder.influence_score }}/4</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Interest</small>
+                            <div class="fw-bold">{{ stakeholder.interest_score }}/4</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Priority</small>
+                            <div class="fw-bold">{{ stakeholder.priority_score }}/16</div>
+                        </div>
+                    </div>
+                    
+                    {% if stakeholder.description %}
+                        <p class="card-text">
+                            {{ stakeholder.description|truncatewords:15 }}
+                        </p>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ stakeholder.created_at|date:"M d, Y" }}
+                        </small>
+                        <span class="badge bg-secondary">{{ stakeholder.get_category_display }}</span>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'stakeholder_detail' stakeholder.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                        <a href="{% url 'stakeholder_edit' stakeholder.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <a href="{% url 'engagement_create' %}?stakeholder={{ stakeholder.pk }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-calendar-plus"></i> Meet
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-people text-muted" style="font-size: 4rem;"></i>
+                <h3 class="text-muted mt-3">No stakeholders found</h3>
+                <p class="text-muted">
+                    {% if search_query or influence_filter or category_filter %}
+                        Try adjusting your search criteria or <a href="{% url 'stakeholder_list' %}">clear filters</a>.
+                    {% else %}
+                        Get started by <a href="{% url 'stakeholder_create' %}">adding your first stakeholder</a>.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Stakeholder pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if influence_filter %}&influence={{ influence_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if influence_filter %}&influence={{ influence_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+            
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if influence_filter %}&influence={{ influence_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if influence_filter %}&influence={{ influence_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportStakeholders() {
+    // This would implement stakeholder export functionality
+    alert('Export functionality would be implemented here');
+}
+</script>
+{% endblock %}

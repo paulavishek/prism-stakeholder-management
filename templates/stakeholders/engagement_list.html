@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+
+{% block title %}Engagements - Stakeholder Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .engagement-upcoming {
+        background-color: #fff8dc !important; /* Light yellow background for upcoming */
+        border-left: 4px solid #ffc107; /* Warning color border */
+    }
+    
+    .engagement-today {
+        background-color: #d4edda !important; /* Light green for today */
+        border-left: 4px solid #28a745; /* Success color border */
+    }
+    
+    .engagement-overdue {
+        background-color: #f8d7da !important; /* Light red for overdue planned items */
+        border-left: 4px solid #dc3545; /* Danger color border */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-calendar-event"></i> Engagements</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'engagement_create' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-calendar-plus"></i> Schedule New
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">                <form method="get" class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if value == status_filter %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Type</label>
+                        <select class="form-select" name="type">
+                            <option value="">All Types</option>
+                            {% for value, label in type_choices %}
+                                <option value="{{ value }}" {% if value == type_filter %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Stakeholder</label>
+                        <select class="form-select" name="stakeholder">
+                            <option value="">All Stakeholders</option>
+                            {% for stakeholder in stakeholders %}
+                                <option value="{{ stakeholder.pk }}" {% if stakeholder.pk|stringformat:"s" == stakeholder_filter %}selected{% endif %}>
+                                    {{ stakeholder.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>                    <div class="col-md-2">
+                        <label class="form-label">Time Filter</label>
+                        <select class="form-select" name="upcoming">
+                            <option value="">All Times</option>
+                            <option value="true" {% if upcoming_filter == 'true' %}selected{% endif %}>
+                                Upcoming Only
+                            </option>
+                        </select>
+                        <select class="form-select mt-2" name="overdue">
+                            <option value="">Include All</option>
+                            <option value="true" {% if overdue_filter == 'true' %}selected{% endif %}>
+                                Overdue Only
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="bi bi-search"></i> Filter
+                            </button>                            {% if status_filter or stakeholder_filter or type_filter or upcoming_filter or overdue_filter %}
+                                <a href="{% url 'engagement_list' %}" class="btn btn-outline-secondary btn-sm mt-2">
+                                    <i class="bi bi-x-circle"></i> Clear Filters
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form></div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Filters Indicator -->
+{% if status_filter or stakeholder_filter or type_filter or upcoming_filter or overdue_filter %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <div>
+                <strong>Active Filters:</strong>
+                {% if status_filter %}
+                    <span class="badge bg-primary me-1">Status: {{ status_filter|title }}</span>
+                {% endif %}
+                {% if type_filter %}
+                    <span class="badge bg-secondary me-1">Type: {{ type_filter|title }}</span>
+                {% endif %}
+                {% if stakeholder_filter %}
+                    {% for stakeholder in stakeholders %}
+                        {% if stakeholder.pk|stringformat:"s" == stakeholder_filter %}
+                            <span class="badge bg-primary me-1">Stakeholder: {{ stakeholder.name }}</span>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if upcoming_filter == 'true' %}
+                    <span class="badge bg-warning me-1">Upcoming Only</span>
+                {% endif %}
+                {% if overdue_filter == 'true' %}
+                    <span class="badge bg-danger me-1">Overdue Only</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Results Summary -->
+{% if page_obj %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-calendar-event-fill text-primary"></i> 
+                Engagements
+                <small class="text-muted">({{ page_obj.paginator.count }} total)</small>
+            </h5>
+            {% if page_obj.has_other_pages %}
+                <small class="text-muted">
+                    Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                </small>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Engagement List -->
+<div class="card">
+    <div class="card-body">
+        {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Stakeholder</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>                    <tbody>
+                        {% for engagement in page_obj %}
+                            {% now "Y-m-d" as today %}
+                            {% now "Y-m-d H:i" as current_datetime %}
+                            <tr {% if engagement.scheduled_date|date:"Y-m-d" == today %}class="engagement-today"
+                                {% elif engagement.scheduled_date|date:"Y-m-d H:i" > current_datetime %}class="engagement-upcoming"
+                                {% elif engagement.status == 'planned' and engagement.scheduled_date|date:"Y-m-d H:i" < current_datetime %}class="engagement-overdue"
+                                {% endif %}>
+                                <td>
+                                    <strong>{{ engagement.title }}</strong>
+                                    {% if engagement.description %}
+                                        <br><small class="text-muted">{{ engagement.description|truncatewords:10 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'stakeholder_detail' engagement.stakeholder.pk %}">
+                                        {{ engagement.stakeholder.name }}
+                                    </a>
+                                </td>                                <td>
+                                    <span class="badge bg-info">{{ engagement.get_type_display }}</span>
+                                </td>                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% now "Y-m-d" as today %}
+                                        {% now "Y-m-d H:i" as current_datetime %}
+                                        {% if engagement.scheduled_date|date:"Y-m-d" == today %}
+                                            <i class="bi bi-star-fill text-success me-1" title="Today"></i>
+                                        {% elif engagement.scheduled_date|date:"Y-m-d H:i" > current_datetime %}
+                                            <i class="bi bi-clock text-warning me-1" title="Upcoming"></i>
+                                        {% elif engagement.status == 'planned' %}
+                                            <i class="bi bi-exclamation-triangle text-danger me-1" title="Overdue"></i>
+                                        {% else %}
+                                            <i class="bi bi-check-circle text-muted me-1" title="Past"></i>
+                                        {% endif %}
+                                        <span {% if engagement.scheduled_date|date:"Y-m-d" == today %}class="text-success fw-bold"
+                                              {% elif engagement.scheduled_date|date:"Y-m-d H:i" > current_datetime %}class="text-warning fw-bold"
+                                              {% elif engagement.status == 'planned' %}class="text-danger fw-bold"
+                                              {% endif %}>
+                                            {{ engagement.scheduled_date|date:"M d, Y H:i" }}
+                                        </span>
+                                    </div>
+                                </td>                                <td>
+                                    {% if engagement.status == 'planned' %}
+                                        <span class="badge bg-primary">{{ engagement.get_status_display }}</span>
+                                    {% elif engagement.status == 'completed' %}
+                                        <span class="badge bg-success">{{ engagement.get_status_display }}</span>
+                                    {% elif engagement.status == 'cancelled' %}
+                                        <span class="badge bg-danger">{{ engagement.get_status_display }}</span>
+                                    {% elif engagement.status == 'postponed' %}
+                                        <span class="badge bg-warning">{{ engagement.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ engagement.get_status_display }}</span>
+                                    {% endif %}
+                                </td>                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'engagement_detail' engagement.pk %}" class="btn btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'engagement_edit' engagement.pk %}" class="btn btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-calendar-event text-muted" style="font-size: 4rem;"></i>
+                <h3 class="text-muted mt-3">No engagements found</h3>
+                <p class="text-muted">
+                    {% if status_filter or stakeholder_filter %}
+                        Try adjusting your filters or <a href="{% url 'engagement_list' %}">clear filters</a>.
+                    {% else %}
+                        Get started by <a href="{% url 'engagement_create' %}">scheduling your first engagement</a>.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+                    <small class="text-muted">
+                        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} engagements
+                    </small>
+                </div>
+                <nav aria-label="Engagement pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

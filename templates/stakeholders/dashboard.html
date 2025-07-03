@@ -1,0 +1,1225 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Stakeholder Management{% endblock %}
+
+{% block extra_css %}
+<style>    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        min-height: 120px;
+    }
+    
+    .metric-card .card-body {
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .metric-card:focus {
+        color: white;
+        text-decoration: none;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }.chart-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        position: relative;
+    }    .chart-container.power-interest-grid {
+        height: auto; /* Auto height for the grid container */
+        min-height: 700px; /* Increased minimum height to accommodate grid and overflowing tooltips */
+        overflow: visible; /* Allow content to overflow if needed */
+        padding-bottom: 40px; /* Extra padding at bottom for tooltips */
+    }
+    
+    .chart-container:not(.power-interest-grid) {
+        height: 400px; /* Fixed height for other charts */
+    }
+      .chart-container canvas {
+        max-height: 300px !important; /* Constrain canvas height */
+        max-width: 100% !important;
+    }
+    
+    /* Prevent any element from causing horizontal scroll */
+    .container-fluid, .row, .col-lg-6, .col-lg-8, .col-lg-4 {
+        max-width: 100%;
+        overflow: hidden;
+    }
+    
+    /* Exception for dropdown containers to allow menu visibility */
+    .dropdown, .btn-group {
+        position: static;
+    }
+    
+    .row:has(.dropdown) {
+        overflow: visible;
+    }
+    
+    /* Alternative approach for older browsers */
+    .demo-prompt .row {
+        overflow: visible;
+    }
+    
+    /* Ensure dropdown menus appear above other content */
+    .dropdown-menu {
+        z-index: 1050;
+        position: absolute;
+        min-width: 280px; /* Ensure dropdown is wide enough for the content */
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Style dropdown items with icons and descriptions */
+    .dropdown-item {
+        padding: 0.75rem 1rem;
+        line-height: 1.3;
+    }
+    
+    .dropdown-item small {
+        display: block;
+        margin-top: 0.25rem;
+    }
+    
+    /* Ensure body and html don't allow overflow */
+    body, html {
+        overflow-x: hidden;
+    }    .stakeholder-grid {
+        position: relative;
+        width: 100%;
+        height: 550px; /* Increased height to accommodate labels */
+        background: linear-gradient(to right, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        overflow: visible; /* Allow tooltips to overflow grid boundaries */
+        margin-bottom: 60px; /* Increased margin to accommodate overflowing tooltips */
+    }
+    
+    .grid-axis {
+        position: absolute;
+        background: #6c757d;
+    }
+    
+    .grid-axis.horizontal {
+        width: 100%;
+        height: 2px;
+        top: 50%;
+        transform: translateY(-1px);
+    }
+    
+    .grid-axis.vertical {
+        height: 100%;
+        width: 2px;
+        left: 50%;
+        transform: translateX(-1px);
+    }
+    
+    .grid-labels {
+        position: absolute;
+        font-size: 12px;
+        font-weight: bold;
+        color: #495057;
+    }
+      .grid-labels.top { top: 15px; left: 50%; transform: translateX(-50%); }
+    .grid-labels.bottom { bottom: 15px; left: 50%; transform: translateX(-50%); }
+    .grid-labels.left { left: 15px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+    .grid-labels.right { right: 15px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+    
+    .quadrant-label {
+        position: absolute;
+        font-size: 11px;
+        font-weight: bold;
+        color: #6c757d;
+        text-align: center;
+        padding: 5px;
+        background: rgba(255,255,255,0.8);
+        border-radius: 5px;
+    }
+      .quadrant-label.manage-closely { top: 15px; right: 15px; }
+    .quadrant-label.keep-satisfied { top: 15px; left: 15px; }
+    .quadrant-label.keep-informed { bottom: 15px; right: 15px; }
+    .quadrant-label.monitor { bottom: 15px; left: 15px; }
+    
+    .stakeholder-point {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 10;
+        border: 2px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    .stakeholder-point:hover {
+        transform: scale(1.5);
+        z-index: 20;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+      .stakeholder-point.very_high-influence { background: #6f42c1; }
+    .stakeholder-point.high-influence { background: #dc3545; }
+    .stakeholder-point.medium-influence { background: #ffc107; }
+    .stakeholder-point.low-influence { background: #28a745; }
+      .stakeholder-tooltip {
+        position: absolute;
+        background: #333;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000; /* Increased z-index to ensure tooltips appear above everything */
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        transform: translateX(-50%);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        min-width: 120px; /* Ensure minimum width for readability */
+        text-align: center;
+    }
+    
+    .stakeholder-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        border: 5px solid transparent;
+        border-top-color: #333;
+        transform: translateX(-50%);
+    }
+      .stakeholder-tooltip.show {
+        opacity: 1;
+    }
+      .stakeholder-tooltip.tooltip-bottom::after {
+        top: -10px;
+        border-top-color: transparent;
+        border-bottom-color: #333;
+    }
+    
+    /* Ensure tooltips near edges are visible */
+    .stakeholder-tooltip.tooltip-left {
+        transform: translateX(-25%);
+    }
+    
+    .stakeholder-tooltip.tooltip-right {
+        transform: translateX(-75%);
+    }    .legend {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px; /* Increased margin to account for potential tooltip overflow */
+        flex-wrap: wrap;
+        padding: 10px;
+        background: rgba(248, 249, 250, 0.8);
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+    }
+    
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Demo Mode Banner -->
+{% if is_demo_mode %}
+<div class="alert alert-info alert-dismissible fade show demo-banner" role="alert" id="demoBanner" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); border: none; color: white; border-radius: 10px; margin-bottom: 20px;">
+    <div class="row align-items-center">
+        <div class="col-auto">
+            <i class="bi bi-info-circle-fill" style="font-size: 1.5rem;"></i>
+        </div>
+        <div class="col">
+            <h6 class="mb-1"><strong>Demo Mode Active</strong></h6>
+            <small>
+                You're viewing sample data ({{ demo_scenario|default:"Standard" }} scenario). 
+                <strong>✓ AI Integration ✓ Data Visualization ✓ Responsive Design</strong>
+            </small>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-light btn-sm" onclick="loadDemoData()">
+                    <i class="bi bi-arrow-clockwise"></i> Reload Data
+                </button>
+                <button class="btn btn-outline-light btn-sm" onclick="clearDemoData()">
+                    <i class="bi bi-trash"></i> Clear All Data
+                </button>
+                <button class="btn btn-outline-light btn-sm" onclick="exportDemoReport()">
+                    <i class="bi bi-download"></i> Demo Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Demo Data Loading Section for Empty Database -->
+{% if total_stakeholders == 0 %}
+<div class="alert alert-light border demo-prompt" role="alert" style="border-radius: 10px; margin-bottom: 20px;">
+    <div class="row align-items-center">
+        <div class="col-auto">
+            <i class="bi bi-database" style="font-size: 2rem; color: #6c757d;"></i>
+        </div>
+        <div class="col">
+            <h5 class="mb-1">Welcome to Stakeholder Management!</h5>
+            <p class="mb-2">Get started quickly with sample data to explore all features:</p>
+            <div class="feature-highlights mb-2">
+                <small class="text-muted">
+                    <i class="bi bi-check-circle text-success"></i> AI-powered insights &nbsp;
+                    <i class="bi bi-check-circle text-success"></i> Interactive dashboards &nbsp;
+                    <i class="bi bi-check-circle text-success"></i> Relationship mapping
+                </small>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="demoDataDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-rocket"></i> Load Demo Data
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="demoDataDropdown">
+                    <li><h6 class="dropdown-header">Choose Scenario</h6></li>
+                    <li><a class="dropdown-item" href="#" onclick="loadDemoData('standard')">
+                        <i class="bi bi-briefcase"></i> Standard Demo
+                        <br><small class="text-muted">General stakeholder management</small>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="loadDemoData('tech_startup')">
+                        <i class="bi bi-lightning"></i> Tech Startup
+                        <br><small class="text-muted">Technology company scenario</small>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="loadDemoData('enterprise_project')">
+                        <i class="bi bi-building"></i> Enterprise Project
+                        <br><small class="text-muted">Large enterprise initiative</small>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="loadDemoData('product_launch')">
+                        <i class="bi bi-box-seam"></i> Product Launch
+                        <br><small class="text-muted">Product launch campaign</small>
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-speedometer2"></i> Dashboard</h1>    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportReport()">
+                <i class="bi bi-download"></i> Export Report
+            </button>
+        </div>
+        <div class="dropdown">
+            <button type="button" class="btn btn-sm btn-primary dropdown-toggle" id="quickAddDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-calendar-plus"></i> Quick Add
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="quickAddDropdown">
+                <li><a class="dropdown-item" href="{% url 'stakeholder_create' %}">
+                    <i class="bi bi-person-plus"></i> Add Stakeholder
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'engagement_create' %}">
+                    <i class="bi bi-calendar-plus"></i> Schedule Engagement
+                </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'stakeholder_list' %}" class="card metric-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Total Stakeholders</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_stakeholders }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people text-white-50" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+      <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'engagement_list' %}?status=planned&overdue=true" class="card metric-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Overdue Engagements</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ overdue_engagements_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-circle text-white-50" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+      <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'stakeholder_list' %}?priority=high" class="card metric-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">High Priority Stakeholders</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ high_priority_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-star text-white-50" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+      <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{% url 'engagement_list' %}?status=planned&upcoming=true" class="card metric-card">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">Upcoming Engagements</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ upcoming_engagements_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-event text-white-50" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </a>    </div>
+</div>
+
+<!-- Quick Access Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h6 class="text-muted mb-3"><i class="bi bi-filter"></i> Quick Filters</h6>
+    </div>    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="{% url 'engagement_list' %}?status=planned&upcoming=true&type=meeting" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-camera-video"></i> Upcoming Meetings Only
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="{% url 'engagement_list' %}?status=completed" class="btn btn-outline-success btn-sm w-100">
+            <i class="bi bi-check-circle"></i> Completed Engagements
+        </a>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="{% url 'engagement_create' %}" class="btn btn-outline-info btn-sm w-100">
+            <i class="bi bi-plus-circle"></i> Schedule New Engagement
+        </a>
+    </div>
+</div>
+
+<!-- Interactive Stakeholder Power/Interest Grid -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="chart-container power-interest-grid">            <h5 class="mb-3">
+                <i class="bi bi-grid-3x3-gap"></i> Stakeholder Power/Interest Grid
+            </h5>
+            
+            <!-- Empty state message (shown when no stakeholders) -->
+            <div id="gridEmptyState" class="text-center py-5" style="display: none;">
+                <i class="bi bi-grid text-muted" style="font-size: 4rem;"></i>
+                <h6 class="text-muted mt-3">No stakeholders to display</h6>
+                <p class="text-muted">
+                    <a href="{% url 'stakeholder_create' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus"></i> Add your first stakeholder
+                    </a>
+                </p>
+            </div>
+            
+            <!-- Actual grid (shown when stakeholders exist) -->
+            <div class="stakeholder-grid" id="stakeholderGrid" style="display: none;">
+                <!-- Grid Lines -->
+                <div class="grid-axis horizontal"></div>
+                <div class="grid-axis vertical"></div>
+                
+                <!-- Axis Labels -->
+                <div class="grid-labels top">High Interest</div>
+                <div class="grid-labels bottom">Low Interest</div>
+                <div class="grid-labels left">Low Power</div>
+                <div class="grid-labels right">High Power</div>
+                
+                <!-- Quadrant Labels -->
+                <div class="quadrant-label manage-closely">
+                    <strong>Manage Closely</strong><br>
+                    <small>High Power, High Interest</small>
+                </div>
+                <div class="quadrant-label keep-satisfied">
+                    <strong>Keep Satisfied</strong><br>
+                    <small>High Power, Low Interest</small>
+                </div>
+                <div class="quadrant-label keep-informed">
+                    <strong>Keep Informed</strong><br>
+                    <small>Low Power, High Interest</small>
+                </div>
+                <div class="quadrant-label monitor">
+                    <strong>Monitor</strong><br>
+                    <small>Low Power, Low Interest</small>
+                </div>
+                
+                <!-- Stakeholder Points will be added by JavaScript -->
+            </div>
+              <!-- Legend -->
+            <div class="legend mt-3">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #6f42c1;"></div>
+                    <span>Very High Influence</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #dc3545;"></div>
+                    <span>High Influence</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffc107;"></div>
+                    <span>Medium Influence</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #28a745;"></div>
+                    <span>Low Influence</span>
+                </div>                <div class="ms-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        Hover over points to see stakeholder details. Click to view full profile. Tooltips will adjust position to stay visible.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">    <!-- Stakeholder Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h6><i class="bi bi-pie-chart"></i> Stakeholder Categories</h6>
+            <div style="position: relative; height: 300px;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Engagement Types -->
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h6><i class="bi bi-bar-chart"></i> Engagement Types</h6>
+            <div style="position: relative; height: 300px;">
+                <canvas id="engagementChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h6><i class="bi bi-clock-history"></i> Recent Stakeholders</h6>
+            {% if recent_stakeholders %}
+                <div class="list-group list-group-flush">
+                    {% for stakeholder in recent_stakeholders %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ stakeholder.name }}</strong>
+                                <small class="text-muted d-block">{{ stakeholder.organization }}</small>
+                            </div>                            <div>
+                                {% if stakeholder.influence == 'low' %}
+                                    <span class="badge bg-secondary">{{ stakeholder.get_influence_display }}</span>
+                                {% elif stakeholder.influence == 'medium' %}
+                                    <span class="badge bg-info">{{ stakeholder.get_influence_display }}</span>
+                                {% elif stakeholder.influence == 'high' %}
+                                    <span class="badge bg-warning">{{ stakeholder.get_influence_display }}</span>
+                                {% elif stakeholder.influence == 'very_high' %}
+                                    <span class="badge bg-danger">{{ stakeholder.get_influence_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ stakeholder.get_influence_display }}</span>
+                                {% endif %}
+                                <a href="{% url 'stakeholder_detail' stakeholder.pk %}" class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No stakeholders yet. <a href="{% url 'stakeholder_create' %}">Add your first stakeholder</a>.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h6><i class="bi bi-calendar-check"></i> Upcoming Engagements</h6>
+            {% if upcoming_engagements %}
+                <div class="list-group list-group-flush">
+                    {% for engagement in upcoming_engagements %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ engagement.title }}</strong>
+                                <small class="text-muted d-block">
+                                    {{ engagement.stakeholder.name }} • {{ engagement.scheduled_date|date:"M d, Y H:i" }}
+                                </small>
+                            </div>
+                            <div>
+                                <span class="badge bg-info">{{ engagement.get_type_display }}</span>
+                                <a href="{% url 'engagement_detail' engagement.pk %}" class="btn btn-sm btn-outline-primary ms-2">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-calendar-plus text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2">No upcoming engagements. <a href="{% url 'engagement_create' %}">Schedule a meeting</a>.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Stakeholder data for the grid (this would normally come from the backend)
+/* This section contains Django template tags that will be processed server-side */
+/* JS validators will ignore this section due to being in a comment */
+let stakeholders = [];
+try {
+    const stakeholdersData = '{{ stakeholders_json|escapejs }}';
+    if (stakeholdersData && stakeholdersData.trim() !== '') {
+        stakeholders = JSON.parse(stakeholdersData);
+    }
+} catch (e) {
+    console.warn('Error parsing stakeholders data:', e);
+    stakeholders = [];
+}
+/* End of Django template section */
+
+// Initialize the interactive stakeholder grid
+function initializeStakeholderGrid() {
+    const grid = document.getElementById('stakeholderGrid');
+    const emptyState = document.getElementById('gridEmptyState');
+    
+    if (!stakeholders || stakeholders.length === 0) {
+        // Show empty state and hide grid
+        emptyState.style.display = 'block';
+        grid.style.display = 'none';
+        return;
+    }
+    
+    // Show grid and hide empty state
+    emptyState.style.display = 'none';
+    grid.style.display = 'block';
+    
+    const gridRect = grid.getBoundingClientRect();
+    
+    stakeholders.forEach((stakeholder, index) => {
+        // Calculate position based on influence (x-axis) and interest (y-axis)
+        // Adding some randomization to prevent exact overlaps
+        const baseX = ((stakeholder.influenceScore - 1) / 3) * 100; // 0-100%
+        const baseY = (1 - (stakeholder.interestScore - 1) / 3) * 100; // Inverted for visual clarity
+        
+        // Add slight random offset to prevent exact overlaps
+        const offsetX = (Math.random() - 0.5) * 8; // ±4% random offset
+        const offsetY = (Math.random() - 0.5) * 8;
+          const x = Math.max(8, Math.min(92, baseX + offsetX)); // Keep within grid bounds with more margin
+        const y = Math.max(8, Math.min(92, baseY + offsetY)); // Keep within grid bounds with more margin
+        
+        // Create stakeholder point
+        const point = document.createElement('div');
+        point.className = `stakeholder-point ${stakeholder.influence}-influence`;
+        point.style.left = x + '%';
+        point.style.top = y + '%';
+        
+        // Create tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'stakeholder-tooltip';
+        tooltip.innerHTML = `
+            <strong>${stakeholder.name}</strong><br>
+            <small>${stakeholder.title}</small><br>
+            <small>${stakeholder.organization}</small><br>
+            <small>Priority: ${stakeholder.priorityScore}/16</small>
+        `;        // Position tooltip with smart positioning to avoid cutoff
+        let tooltipY = y - 10; // Default: above the point
+        let tooltipX = x;
+        let tooltipClasses = [];
+        
+        // Vertical positioning
+        if (y > 80) {
+            // Near bottom edge, position above with more space
+            tooltipY = y - 15;
+        } else if (y < 20) {
+            // Near top edge, position below
+            tooltipY = y + 5;
+            tooltipClasses.push('tooltip-bottom');
+        }
+        
+        // Horizontal positioning adjustments
+        if (x < 15) {
+            // Near left edge, adjust transform to show more of tooltip
+            tooltipClasses.push('tooltip-left');
+        } else if (x > 85) {
+            // Near right edge, adjust transform to show more of tooltip
+            tooltipClasses.push('tooltip-right');
+        }
+        
+        // Ensure tooltip doesn't go beyond reasonable bounds
+        tooltipY = Math.max(-8, Math.min(108, tooltipY));
+        
+        tooltip.style.left = tooltipX + '%';
+        tooltip.style.top = tooltipY + '%';
+        
+        // Apply positioning classes
+        tooltipClasses.forEach(cls => tooltip.classList.add(cls));
+          // Add hover events
+        point.addEventListener('mouseenter', function() {
+            tooltip.classList.add('show');
+            // Highlight effect
+            point.style.transform = 'scale(1.5)';
+            point.style.zIndex = '1001'; // Higher than tooltip z-index
+        });
+        
+        point.addEventListener('mouseleave', function() {
+            tooltip.classList.remove('show');
+            point.style.transform = 'scale(1)';
+            point.style.zIndex = '10';
+        });
+        
+        // Click to view stakeholder detail
+        point.addEventListener('click', function() {
+            window.location.href = `/stakeholders/${stakeholder.id}/`;
+        });
+        
+        // Add elements to grid
+        grid.appendChild(point);
+        grid.appendChild(tooltip);
+    });
+}
+
+// Initialize category chart
+function initializeCategoryChart() {
+    const ctx = document.getElementById('categoryChart');
+    if (!ctx) {
+        console.warn('Category chart canvas not found');
+        return;
+    }
+    
+    let categoryData = [];
+    try {
+        const categoryDataRaw = '{{ category_data|escapejs }}';
+        if (categoryDataRaw && categoryDataRaw.trim() !== '' && categoryDataRaw !== 'None') {
+            categoryData = JSON.parse(categoryDataRaw);
+        }
+    } catch (e) {
+        console.warn('Error parsing category data:', e);
+        categoryData = [];
+    }
+    
+    // Ensure categoryData is an array
+    if (!Array.isArray(categoryData)) {
+        categoryData = [];
+    }
+    
+    if (!categoryData || categoryData.length === 0) {
+        // Show empty state in chart container
+        ctx.parentElement.innerHTML = `
+            <h6><i class="bi bi-pie-chart"></i> Stakeholder Categories</h6>
+            <div class="text-center py-4">
+                <i class="bi bi-pie-chart text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">No category data available</p>
+            </div>
+        `;
+        return;
+    }
+      try {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: categoryData.map(item => item.category.charAt(0).toUpperCase() + item.category.slice(1)),
+                datasets: [{
+                    data: categoryData.map(item => item.count),
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                        '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        console.error('Error creating category chart:', e);
+        ctx.parentElement.innerHTML = `
+            <h6><i class="bi bi-pie-chart"></i> Stakeholder Categories</h6>
+            <div class="text-center py-4">
+                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Error loading chart</p>
+            </div>
+        `;
+    }
+}
+
+// Initialize engagement chart
+function initializeEngagementChart() {
+    const ctx = document.getElementById('engagementChart');
+    if (!ctx) {
+        console.warn('Engagement chart canvas not found');
+        return;
+    }
+    
+    let engagementData = [];
+    try {
+        const engagementDataRaw = '{{ engagement_types|escapejs }}';
+        if (engagementDataRaw && engagementDataRaw.trim() !== '' && engagementDataRaw !== 'None') {
+            engagementData = JSON.parse(engagementDataRaw);
+        }
+    } catch (e) {
+        console.warn('Error parsing engagement data:', e);
+        engagementData = [];
+    }
+    
+    // Ensure engagementData is an array
+    if (!Array.isArray(engagementData)) {
+        engagementData = [];
+    }
+      if (!engagementData || engagementData.length === 0) {
+        // Show empty state in chart container
+        ctx.parentElement.innerHTML = `
+            <h6><i class="bi bi-bar-chart"></i> Engagement Types</h6>
+            <div class="text-center py-4">
+                <i class="bi bi-bar-chart text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">No engagement data available</p>
+            </div>
+        `;
+        return;
+    }
+    
+    try {
+        new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: engagementData.map(item => item.type.charAt(0).toUpperCase() + item.type.slice(1)),
+            datasets: [{
+                label: 'Count',
+                data: engagementData.map(item => item.count),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            },            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    } catch (e) {
+        console.error('Error creating engagement chart:', e);
+        ctx.parentElement.innerHTML = `
+            <h6><i class="bi bi-bar-chart"></i> Engagement Types</h6>
+            <div class="text-center py-4">
+                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Error loading chart</p>
+            </div>
+        `;
+    }
+}
+
+// Export Report function
+function exportReport() {    // Create a summary of dashboard data
+    const reportData = {
+        generatedAt: new Date().toISOString(),
+        totalStakeholders: parseInt('{{ total_stakeholders }}' || '0'),
+        highPriorityCount: parseInt('{{ high_priority_count }}' || '0'),
+        overdueEngagements: parseInt('{{ overdue_engagements_count }}' || '0'),
+        upcomingEngagements: parseInt('{{ upcoming_engagements_count }}' || '0')
+    };
+    
+    // Safely parse category data
+    let categoryData = [];
+    try {
+        const categoryRaw = '{{ category_data|escapejs }}';
+        if (categoryRaw && categoryRaw.trim() !== '' && categoryRaw !== 'None') {
+            categoryData = JSON.parse(categoryRaw);
+        }
+    } catch (e) {
+        console.warn('Error parsing category data for export:', e);
+        categoryData = [];
+    }
+    
+    // Safely parse engagement data
+    let engagementTypes = [];
+    try {
+        const engagementRaw = '{{ engagement_types|escapejs }}';
+        if (engagementRaw && engagementRaw.trim() !== '' && engagementRaw !== 'None') {
+            engagementTypes = JSON.parse(engagementRaw);
+        }
+    } catch (e) {
+        console.warn('Error parsing engagement data for export:', e);
+        engagementTypes = [];
+    }
+    
+    // Create CSV content
+    let csvContent = "Stakeholder Management Dashboard Report\n";
+    csvContent += "Generated: " + new Date().toLocaleString() + "\n\n";    csvContent += "Summary\n";
+    csvContent += "Total Stakeholders," + reportData.totalStakeholders + "\n";
+    csvContent += "High Priority Stakeholders," + reportData.highPriorityCount + "\n";
+    csvContent += "Overdue Engagements," + reportData.overdueEngagements + "\n";
+    csvContent += "Upcoming Engagements," + reportData.upcomingEngagements + "\n\n";
+    
+    // Add category breakdown
+    if (categoryData && categoryData.length > 0) {
+        csvContent += "Stakeholder Categories\n";
+        csvContent += "Category,Count\n";
+        categoryData.forEach(item => {
+            csvContent += item.category + "," + item.count + "\n";
+        });
+        csvContent += "\n";
+    }
+    
+    // Add engagement types
+    if (engagementTypes && engagementTypes.length > 0) {
+        csvContent += "Engagement Types\n";
+        csvContent += "Type,Count\n";
+        engagementTypes.forEach(item => {
+            csvContent += item.type + "," + item.count + "\n";
+        });
+    }
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'stakeholder_dashboard_report_' + new Date().toISOString().split('T')[0] + '.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Demo Data Management Functions
+function loadDemoData(scenario = 'standard') {
+    // Show loading state
+    const loadingAlert = document.createElement('div');
+    loadingAlert.className = 'alert alert-info';
+    loadingAlert.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            Loading demo data (${scenario.replace('_', ' ')})...
+        </div>
+    `;
+    
+    // Insert loading alert
+    const contentDiv = document.querySelector('.container-fluid') || document.querySelector('.container') || document.body;
+    contentDiv.insertBefore(loadingAlert, contentDiv.firstChild);
+    
+    // Make API call
+    fetch('{% url "load_demo_data" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `scenario=${scenario}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading alert
+        loadingAlert.remove();
+        
+        if (data.success) {
+            // Show success message
+            showAlert('success', `Demo data loaded successfully! (${scenario.replace('_', ' ')} scenario)`);
+            
+            // Reload page after short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert('danger', `Error loading demo data: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        loadingAlert.remove();
+        console.error('Error loading demo data:', error);
+        showAlert('danger', 'Failed to load demo data. Please try again.');
+    });
+}
+
+function clearDemoData() {
+    // Confirm before clearing
+    if (!confirm('This will delete ALL your stakeholder data. Are you sure you want to continue?')) {
+        return;
+    }
+    
+    // Show loading state
+    const loadingAlert = document.createElement('div');
+    loadingAlert.className = 'alert alert-warning';
+    loadingAlert.innerHTML = `
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            Clearing all data...
+        </div>
+    `;
+    
+    // Insert loading alert
+    const contentDiv = document.querySelector('.container-fluid') || document.querySelector('.container') || document.body;
+    contentDiv.insertBefore(loadingAlert, contentDiv.firstChild);
+    
+    // Make API call
+    fetch('{% url "clear_demo_data" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading alert
+        loadingAlert.remove();
+        
+        if (data.success) {
+            // Show success message
+            showAlert('success', 'All data cleared successfully!');
+            
+            // Reload page after short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert('danger', `Error clearing data: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        loadingAlert.remove();
+        console.error('Error clearing demo data:', error);
+        showAlert('danger', 'Failed to clear data. Please try again.');
+    });
+}
+
+function exportDemoReport() {
+    // Create demo report with current data and feature showcase
+    const reportData = {
+        title: 'Stakeholder Management Demo Report',
+        generatedAt: new Date().toLocaleString(),
+        scenario: '{{ demo_scenario|default:"Standard" }}',
+        features: {
+            'AI Integration': 'Powered by Google Gemini API for intelligent insights',
+            'Data Visualization': 'Interactive charts using Chart.js',
+            'Responsive Design': 'Bootstrap 5 with modern gradient styling',
+            'Stakeholder Grid': 'Power-Interest matrix for strategic planning',
+            'Engagement Tracking': 'Comprehensive engagement management',
+            'Relationship Mapping': 'Visual stakeholder relationship tracking'
+        },
+        techStack: {
+            'Backend': 'Django 5.2.3 with Python 3.12+',
+            'Frontend': 'Bootstrap 5, Chart.js, Vanilla JavaScript',
+            'Database': 'Django ORM (SQLite/PostgreSQL)',
+            'AI': 'Google Gemini API (gemini-1.5-flash)',
+            'Deployment': 'Google Cloud Platform ready'
+        },
+        metrics: {
+            'Total Stakeholders': '{{ total_stakeholders }}',
+            'High Priority': '{{ high_priority_count }}',
+            'Upcoming Engagements': '{{ upcoming_engagements_count }}',
+            'Overdue Items': '{{ overdue_engagements_count }}'
+        }
+    };
+    
+    // Create and download report
+    const reportContent = generateReportContent(reportData);
+    downloadReport(reportContent, 'stakeholder-management-demo-report.html');
+}
+
+function generateReportContent(data) {
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${data.title}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .section { margin-bottom: 30px; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .feature-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+        .metric-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .tech-badge { background: #007bff; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin: 2px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>${data.title}</h1>
+        <p>Generated: ${data.generatedAt} | Scenario: ${data.scenario}</p>
+    </div>
+    
+    <div class="section">
+        <h2>🚀 Key Features Demonstrated</h2>
+        <div class="feature-grid">
+            ${Object.entries(data.features).map(([feature, description]) => `
+                <div class="feature-card">
+                    <h4>✓ ${feature}</h4>
+                    <p>${description}</p>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📊 Current Metrics</h2>
+        ${Object.entries(data.metrics).map(([metric, value]) => `
+            <div class="metric-row">
+                <strong>${metric}:</strong>
+                <span>${value}</span>
+            </div>
+        `).join('')}
+    </div>
+    
+    <div class="section">
+        <h2>🛠 Technical Implementation</h2>
+        <p>This application showcases modern web development practices:</p>
+        ${Object.entries(data.techStack).map(([category, tech]) => `
+            <span class="tech-badge">${category}: ${tech}</span>
+        `).join('')}
+    </div>
+    
+    <div class="section">
+        <h2>💼 Project Management Skills Demonstrated</h2>
+        <ul>
+            <li><strong>Stakeholder Analysis:</strong> Power-Interest matrix implementation</li>
+            <li><strong>Data-Driven Insights:</strong> AI-powered analytics and recommendations</li>
+            <li><strong>User Experience:</strong> Intuitive interface with progressive enhancement</li>
+            <li><strong>Technical Leadership:</strong> Modern architecture with scalable design</li>
+            <li><strong>Product Thinking:</strong> Demo mode for seamless user onboarding</li>
+        </ul>
+    </div>
+    
+    <footer style="margin-top: 50px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+        <p><strong>Ready for Production:</strong> This application is built with enterprise-grade practices and is ready for deployment to Google Cloud Platform.</p>
+        <p><em>Developed as a portfolio project demonstrating full-stack development and project management capabilities.</em></p>
+    </footer>
+</body>
+</html>`;
+}
+
+function downloadReport(content, filename) {
+    const blob = new Blob([content], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    showAlert('success', 'Demo report downloaded successfully!');
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at top of content
+    const contentDiv = document.querySelector('.container-fluid') || document.querySelector('.container') || document.body;
+    contentDiv.insertBefore(alertDiv, contentDiv.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+           document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
+// Initialize everything when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard script loaded');
+    
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded!');
+        return;
+    }
+    
+    console.log('Chart.js is available, initializing charts...');
+    initializeStakeholderGrid();
+    initializeCategoryChart();
+    initializeEngagementChart();
+    
+    // Add CSRF token to page if not already present
+    if (!document.querySelector('[name=csrfmiddlewaretoken]') && !document.querySelector('meta[name="csrf-token"]')) {
+        const csrfToken = '{{ csrf_token }}';
+        const metaTag = document.createElement('meta');
+        metaTag.name = 'csrf-token';
+        metaTag.content = csrfToken;
+        document.head.appendChild(metaTag);
+    }
+});
+</script>
+{% endblock %}

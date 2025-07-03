@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Stakeholder Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-calendar-plus"></i> {{ title }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'engagement_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Engagement Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.stakeholder.id_for_label }}" class="form-label">
+                                Stakeholder <span class="text-danger">*</span>
+                            </label>
+                            {{ form.stakeholder }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                Title <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.type.id_for_label }}" class="form-label">Type</label>
+                            {{ form.type }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                            {{ form.status }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.duration_minutes.id_for_label }}" class="form-label">Duration (minutes)</label>
+                            {{ form.duration_minutes }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.scheduled_date.id_for_label }}" class="form-label">
+                            Scheduled Date & Time <span class="text-danger">*</span>
+                        </label>
+                        {{ form.scheduled_date }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.objectives.id_for_label }}" class="form-label">Objectives</label>
+                        {{ form.objectives }}
+                        <small class="form-text text-muted">What do you hope to achieve in this engagement?</small>
+                    </div>
+                      <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            {% if engagement %}
+                                <i class="bi bi-check-lg"></i> Update Engagement
+                            {% else %}
+                                <i class="bi bi-check-lg"></i> Schedule Engagement
+                            {% endif %}
+                        </button>
+                        <a href="{% url 'engagement_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-lg"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Engagement Tips</h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Meeting Types:</strong></p>
+                    <ul>
+                        <li><strong>Presentation:</strong> Formal information sharing</li>
+                        <li><strong>Workshop:</strong> Collaborative working sessions</li>
+                        <li><strong>Interview:</strong> Information gathering</li>
+                        <li><strong>Survey:</strong> Structured feedback collection</li>
+                    </ul>
+                    
+                    <div class="alert alert-info small mt-3">
+                        <i class="bi bi-robot"></i>
+                        <strong>AI Tip:</strong> After the engagement, use AI to generate summaries and extract action items from your notes.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
